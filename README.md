@@ -8,7 +8,7 @@ YTShorts2TikTok is a public tool created by me (@techgenius81) that lets you pro
 2. Go to **https://www.tiktok.com/** and log into your TikTok account.
 3. Open the **EditThisCookie V3** extension and click the **Download** button at the top.
 
-![EditThisCookie Download](https://i.imgur.com/rXITtVd.png)
+![Button Preview](https://i.imgur.com/rXITtVd.png)
 
 4. Open the downloaded cookie file, copy all of its contents, and paste them into `cookies.json` in the project folder.
 5. Install **Python 3.10+**.
