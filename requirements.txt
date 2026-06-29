@@ -1,0 +1,4 @@
+chromedriver-autoinstaller
+selenium
+customtkinter
+yt-dlp
