@@ -5,7 +5,7 @@ YTShorts2TikTok is a public tool created by me (@techgenius81) that lets you pro
 ## How to Use
 
 1. Install **[EditThisCookie V3](https://chromewebstore.google.com/detail/editthiscookie-v3/ojfebgpkimhlhcblbalbfjblapadhbol)**.
-2. Go to **https://www.tiktok.com/** and log into your TikTok account.
+2. Go to **[TikTok](https://tiktok.com)** and log into your TikTok account.
 3. Open the **EditThisCookie V3** extension and click the **Download** button at the top.
 
 ![Button Preview](https://i.imgur.com/rXITtVd.png)
