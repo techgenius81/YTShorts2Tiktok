@@ -12,6 +12,7 @@ import urllib.request
 import ctypes
 import tkinter as tk
 from tkinter import font as tkfont
+from PIL import Image, ImageTk
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -27,6 +28,9 @@ os.makedirs(FONTS_DIR, exist_ok=True)
 
 FONT_PATH = os.path.join(FONTS_DIR, "SF-Pro-Display-Regular.otf")
 FONT_LIGHT_PATH = os.path.join(FONTS_DIR, "SF-Pro-Display-Light.otf")
+
+ICON_ICO_PATH = os.path.join(RESOURCES_DIR, "icon.ico")
+ICON_PNG_PATH = os.path.join(RESOURCES_DIR, "icon.png")
 
 def load_custom_fonts():
     for url, path in [(FONT_PATH, FONT_LIGHT_PATH)]:
@@ -45,10 +49,10 @@ def load_custom_fonts():
                     ctypes.windll.user32.SendMessageW(0xFFFF, 0x001D, 0, 0)
             except:
                 pass
-    
+
     reg_family = "Segoe UI"
     light_family = "Segoe UI"
-    
+
     try:
         temp_app = tk.Tk()
         for family in tkfont.families(root=temp_app):
@@ -63,7 +67,7 @@ def load_custom_fonts():
         temp_app.destroy()
     except:
         pass
-        
+
     return reg_family, light_family
 
 ctk.set_appearance_mode("dark")
@@ -71,18 +75,26 @@ ctk.set_default_color_theme("blue")
 
 subprocess.run("color 2", shell=True)
 
-print("""
+art = r"""
 
-88888888888                888       .d8888b.                    d8b                    .d8888b.   d888   
-    888                    888      d88P  Y88b                   Y8P                   d88P  Y88b d8888   
-    888                    888      888    888                                         Y88b. d88P   888   
-    888   .d88b.   .d8888b 88888b.  888         .d88b.  88888b.  888 888  888 .d8888b   "Y88888"    888   
-    888  d8P  Y8b d88P"    888 "88b 888  88888 d8P  Y8b 888 "88b 888 888  888 88K      .d8P""Y8b.   888   
-    888  88888888 888      888  888 888    888 88888888 888  888 888 888  888 "Y8888b. 888    888   888   
-    888  Y8b.     Y88b.    888  888 Y88b  d88P Y8b.     888  888 888 Y88b 888      X88 Y88b  d88P   888   
-    888   "Y8888   "Y8888P 888  888  "Y8888P88  "Y8888  888  888 888  "Y88888  88888P'  "Y8888P"  8888888
 
-""")
+
+
+
+
+
+▄▄▄▄▄▄▄               █        ▄▄▄                  ▀                   ▄▄▄▄  ▄▄▄   
+   █     ▄▄▄    ▄▄▄   █ ▄▄   ▄▀   ▀  ▄▄▄   ▄ ▄▄   ▄▄▄    ▄   ▄   ▄▄▄   █    █   █   
+   █    █▀  █  █▀  ▀  █▀  █  █   ▄▄ █▀  █  █▀  █    █    █   █  █   ▀  ▀▄▄▄▄▀   █   
+   █    █▀▀▀▀  █      █   █  █    █ █▀▀▀▀  █   █    █    █   █   ▀▀▀▄  █   ▀█   █   
+   █    ▀█▄▄▀  ▀█▄▄▀  █   █   ▀▄▄▄▀ ▀█▄▄▀  █   █  ▄▄█▄▄  ▀▄▄▀█  ▀▄▄▄▀  ▀█▄▄▄▀ ▄▄█▄▄ 
+"""
+
+width = os.get_terminal_size().columns
+
+for line in art.splitlines():
+    print(line.center(width))
+
 
 class TikTokUploader:
     def __init__(self, log_callback, done_callback, custom_caption=None):
@@ -95,7 +107,6 @@ class TikTokUploader:
         threading.Thread(target=self._run, args=(url, cookie_file), daemon=True).start()
 
     def _run(self, url, cookie_file):
-        start_time = time.time()
         try:
             self.log("[+] Extracting", "white")
 
@@ -109,41 +120,16 @@ class TikTokUploader:
                 return
 
             video_info = json.loads(info.stdout)
-            
+
             if self.custom_caption:
                 base_name = self.custom_caption
                 caption = self.custom_caption
             else:
                 raw_title = video_info.get("title", "video")
                 base_name = re.sub(r'#\w+', '', raw_title).strip()
-                caption = video_info.get("description", "")
-            
+                caption = base_name
+
             safe_title = re.sub(r'[<>:"/\\|?*]', '_', base_name)
-
-            self.log("[+] Downloading [0%]", "white")
-            
-            dl_process = subprocess.Popen([
-                "yt-dlp", "-f", "bestvideo+bestaudio/best",
-                "--merge-output-format", "mp4",
-                "-o", f"{safe_title}.%(ext)s",
-                "--no-playlist", url
-            ], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-
-            for line in dl_process.stdout:
-                match = re.search(r'(\d+\.\d+)%', line)
-                if match:
-                    percent = float(match.group(1))
-                    if percent >= 100.0:
-                        self.log(f"[+] Downloading [100%]", "green", replace_last=True)
-                    else:
-                        self.log(f"[+] Downloading [{percent:.1f}%]", "white", replace_last=True)
-            
-            dl_process.wait()
-            
-            if dl_process.returncode != 0:
-                self.log("[-] Download Failed", "red")
-                self.done()
-                return
 
             downloaded_file = f"{safe_title}.mp4"
             if not os.path.exists(downloaded_file):
@@ -151,7 +137,44 @@ class TikTokUploader:
                     if f.endswith(".mp4") and safe_title[:10] in f:
                         downloaded_file = f
                         break
-            
+
+            if os.path.exists(downloaded_file):
+                self.log("[+] Downloading [100%]", "green")
+            else:
+                self.log("[+] Downloading [0%]", "white")
+                reached_100 = False
+
+                dl_process = subprocess.Popen([
+                    "yt-dlp", "-f", "bestvideo+bestaudio/best",
+                    "--merge-output-format", "mp4",
+                    "-o", f"{safe_title}.%(ext)s",
+                    "--no-playlist", url
+                ], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+
+                for line in dl_process.stdout:
+                    match = re.search(r'(\d+\.\d+)%', line)
+                    if match:
+                        percent = float(match.group(1))
+                        if percent >= 100.0 or reached_100:
+                            if not reached_100:
+                                reached_100 = True
+                                self.log("[+] Downloading [100%]", "green", replace_last=True)
+                        else:
+                            self.log(f"[+] Downloading [{percent:.1f}%]", "white", replace_last=True)
+
+                dl_process.wait()
+
+                if dl_process.returncode != 0:
+                    self.log("[-] Download Failed", "red")
+                    self.done()
+                    return
+
+                if not os.path.exists(downloaded_file):
+                    for f in os.listdir("."):
+                        if f.endswith(".mp4") and safe_title[:10] in f:
+                            downloaded_file = f
+                            break
+
             if not os.path.exists(downloaded_file):
                 self.log("[-] File not found", "red")
                 self.done()
@@ -208,7 +231,8 @@ class TikTokUploader:
                 EC.presence_of_element_located((By.CSS_SELECTOR, "input[type='file']"))
             )
             file_input.send_keys(os.path.abspath(downloaded_file))
-            
+
+            upload_reached_100 = False
             while True:
                 percent_js = """
                 var els = document.querySelectorAll('div, span');
@@ -222,16 +246,21 @@ class TikTokUploader:
                 """
                 percent_str = self.driver.execute_script(percent_js)
                 if percent_str and percent_str.isdigit():
-                    if percent_str == "100":
-                        self.log("[+] Uploading [100%]", "green", replace_last=True)
+                    pval = int(percent_str)
+                    if pval >= 100 or upload_reached_100:
+                        if not upload_reached_100:
+                            upload_reached_100 = True
+                            self.log("[+] Uploading [100%]", "green", replace_last=True)
                         break
                     else:
                         self.log(f"[+] Uploading [{percent_str}%]", "white", replace_last=True)
-                
+
                 try:
                     pb = self.driver.find_element(By.CSS_SELECTOR, "button[data-e2e='post_video_button']")
                     if pb.get_attribute("data-disabled") == "false":
-                        self.log("[+] Uploading [100%]", "green", replace_last=True)
+                        if not upload_reached_100:
+                            upload_reached_100 = True
+                            self.log("[+] Uploading [100%]", "green", replace_last=True)
                         break
                 except:
                     pass
@@ -239,7 +268,7 @@ class TikTokUploader:
 
             time.sleep(2)
             self.driver.execute_script("document.querySelectorAll('div.TUXModal-overlay, div[class*=\"modal\"], div[class*=\"overlay\"], div[class*=\"mask\"]').forEach(el => el.remove());")
-            
+
             self.log("[+] Adding Caption", "white")
             caption_js = """
             var el = document.querySelector('div[contenteditable="true"], div.public-DraftEditor-content, div.notranslate');
@@ -269,7 +298,7 @@ class TikTokUploader:
                     pb = self.driver.find_element(By.CSS_SELECTOR, "button[data-e2e='post_video_button']")
                     if pb.get_attribute("data-disabled") == "false" and pb.get_attribute("data-loading") == "false":
                         self.driver.execute_script("arguments[0].click();", pb)
-                        self.log(f"Success", "green")
+                        self.log("Success", "green")
                         break
                     time.sleep(2)
                 except:
@@ -288,34 +317,47 @@ class TikTokUploader:
                 self.driver.quit()
             self.done()
 
+
 class App(ctk.CTk):
     def __init__(self):
         super().__init__()
 
         self.title("https://github.com/techgenius81")
-        self.geometry("850x600")
+        self.geometry("980x620")
         self.configure(fg_color="#0F0F0F")
         self.is_posting = False
+        self._logo_image = None
 
         self.font_family, self.font_family_light = load_custom_fonts()
 
-        self.main_container = ctk.CTkFrame(self, fg_color="#0F0F0F", corner_radius=0)
-        self.main_container.pack(fill=ctk.BOTH, expand=True, padx=40, pady=30)
+        if os.path.exists(ICON_ICO_PATH):
+            try:
+                self.iconbitmap(ICON_ICO_PATH)
+            except:
+                pass
 
-        self.title_label = ctk.CTkLabel(
-            self.main_container, text="Youtube Shorts 2 Tiktok", 
+        self._build_main_ui()
+
+        self.color_map = {"green": "#00FF66", "red": "#FF4444", "white": "#E0E0E0", "dim": "#555555"}
+
+    def _build_main_ui(self):
+        main_container = ctk.CTkFrame(self, fg_color="transparent")
+        main_container.pack(fill=ctk.BOTH, expand=True, padx=40, pady=30)
+
+        title_lbl = ctk.CTkLabel(
+            main_container, text="Youtube Shorts 2 Tiktok",
             font=(self.font_family, 24, "bold"), text_color="#FFFFFF"
         )
-        self.title_label.pack(anchor=ctk.W, pady=(0, 20))
+        title_lbl.pack(anchor=ctk.W, pady=(0, 20))
 
-        self.url_label = ctk.CTkLabel(
-            self.main_container, text="Link", 
+        url_lbl = ctk.CTkLabel(
+            main_container, text="Link",
             font=(self.font_family, 13), text_color="#AAAAAA"
         )
-        self.url_label.pack(anchor=ctk.W, pady=(10, 5))
+        url_lbl.pack(anchor=ctk.W, pady=(10, 5))
 
         self.url_entry = ctk.CTkEntry(
-            self.main_container, placeholder_text="https://www.youtube.com/shorts/...",
+            main_container, placeholder_text="https://www.youtube.com/shorts/...",
             height=45, fg_color="#1E1E1E", border_color="#333333", text_color="#FFFFFF",
             placeholder_text_color="#555555", font=(self.font_family, 13),
             border_width=1, corner_radius=8
@@ -324,7 +366,7 @@ class App(ctk.CTk):
 
         self.use_custom_caption = ctk.BooleanVar(value=False)
         self.custom_caption_cb = ctk.CTkCheckBox(
-            self.main_container, text="Custom Caption", variable=self.use_custom_caption,
+            main_container, text="Custom Caption", variable=self.use_custom_caption,
             command=self.toggle_custom_caption, font=(self.font_family, 13),
             text_color="#FFFFFF", checkbox_width=20, checkbox_height=20,
             fg_color="#FE2C55", hover_color="#FF3B62"
@@ -332,33 +374,47 @@ class App(ctk.CTk):
         self.custom_caption_cb.pack(anchor=ctk.W, pady=(5, 8))
 
         self.caption_text = ctk.CTkTextbox(
-            self.main_container, height=80, fg_color="#1A1A1A", border_color="#2A2A2A",
+            main_container, height=80, fg_color="#1A1A1A", border_color="#2A2A2A",
             text_color="#FFFFFF", font=(self.font_family, 13), border_width=1, corner_radius=8
         )
         self.caption_text.pack(fill=ctk.X, pady=(0, 20))
         self.caption_text.configure(state="disabled")
 
         self.post_btn = ctk.CTkButton(
-            self.main_container, text="Post", command=self.post,
+            main_container, text="Post", command=self.post,
             height=46, font=(self.font_family_light, 14), text_color="#FFFFFF",
             fg_color="#FE2C55", hover_color="#FF3B62", corner_radius=23
         )
         self.post_btn.pack(fill=ctk.X, pady=(10, 25))
 
-        self.console_label = ctk.CTkLabel(
-            self.main_container, text="Console", 
+        console_lbl = ctk.CTkLabel(
+            main_container, text="Console",
             font=(self.font_family, 13), text_color="#AAAAAA"
         )
-        self.console_label.pack(anchor=ctk.W, pady=(0, 5))
+        console_lbl.pack(anchor=ctk.W, pady=(0, 5))
 
         self.console = ctk.CTkTextbox(
-            self.main_container, fg_color="#0A0A0A", border_color="#222222",
-            font=("Consolas", 12), border_width=1, corner_radius=8
+            main_container, fg_color="#0A0A0A", border_color="#222222",
+            font=(self.font_family_light, 12), border_width=1, corner_radius=8
         )
         self.console.pack(fill=ctk.BOTH, expand=True)
         self.console.configure(state="disabled")
 
-        self.color_map = {"green": "#00FF66", "red": "#FF4444", "white": "#E0E0E0", "dim": "#555555"}
+        if os.path.exists(ICON_PNG_PATH):
+            try:
+                img = Image.open(ICON_PNG_PATH)
+                img.thumbnail((40, 40), Image.LANCZOS)   # <-- increased from 30 to 40
+                self._logo_image = ImageTk.PhotoImage(img)
+                logo_lbl = tk.Label(
+                    self,
+                    image=self._logo_image,
+                    bg="#0F0F0F",
+                    bd=0,
+                    highlightthickness=0,
+                )
+                logo_lbl.place(relx=1.0, x=-24, y=14, anchor="ne")  # slightly larger offsets for a bigger icon
+            except:
+                pass
 
     def toggle_custom_caption(self):
         if self.use_custom_caption.get():
@@ -382,6 +438,13 @@ class App(ctk.CTk):
         self.console.see("end")
         self.console.configure(state="disabled")
 
+    def _is_valid_youtube_url(self, url):
+        return bool(re.match(
+            r'^(https?://)?(www\.)?(youtube\.com|youtu\.be)/',
+            url,
+            re.IGNORECASE
+        ))
+
     def post(self):
         if self.is_posting:
             return
@@ -389,6 +452,11 @@ class App(ctk.CTk):
         if not url:
             self.log("[-] No URL", "red")
             return
+
+        if not self._is_valid_youtube_url(url):
+            self.log("[-] Invalid Link", "red")
+            return
+
         cookie_file = os.path.join(os.getcwd(), "cookies.json")
         if not os.path.exists(cookie_file):
             self.log("[-] Missing cookies.json", "red")
@@ -403,10 +471,10 @@ class App(ctk.CTk):
         self.url_entry.configure(state="disabled")
         self.caption_text.configure(state="disabled")
         self.custom_caption_cb.configure(state="disabled")
-        
+
         TikTokUploader(
-            self.log, 
-            lambda: self.after(0, self._done_posting), 
+            self.log,
+            lambda: self.after(0, self._done_posting),
             custom_caption
         ).start(url, cookie_file)
 
@@ -417,6 +485,7 @@ class App(ctk.CTk):
         self.custom_caption_cb.configure(state="normal")
         if self.use_custom_caption.get():
             self.caption_text.configure(state="normal")
+
 
 if __name__ == "__main__":
     app = App()
